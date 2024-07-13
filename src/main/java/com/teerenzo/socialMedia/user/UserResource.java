@@ -3,7 +3,11 @@ package com.teerenzo.socialMedia.user;
 import java.net.URI;
 import java.util.List;
 
+import org.springframework.hateoas.EntityModel;
+import org.springframework.hateoas.server.mvc.WebMvcLinkBuilder;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.json.MappingJacksonValue;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +15,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
+import com.fasterxml.jackson.databind.ser.FilterProvider;
+import com.fasterxml.jackson.databind.ser.impl.SimpleBeanPropertyFilter;
+import com.fasterxml.jackson.databind.ser.impl.SimpleFilterProvider;
 
 import jakarta.validation.Valid;
 
@@ -24,17 +32,31 @@ public class UserResource {
 	}
 	
 	@GetMapping("users")
-	public List<User> retrieveAllUsers(){
-		return service.findAll();
+	public MappingJacksonValue retrieveAllUsers(){
+		List<User> all = service.findAll();
+		MappingJacksonValue mapping = new MappingJacksonValue(all);
+		
+		SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("name","id");
+		FilterProvider filters = new SimpleFilterProvider().addFilter("UsersFilter", filter);
+		mapping.setFilters(filters);
+				
+		
+		return mapping;
 	}
 
 	@GetMapping("users/{id}")
-	public User retrieveUser(@PathVariable int id){
+	public EntityModel<User> retrieveUser(@PathVariable int id){
 		User user = service.findById(id);
 		if(user==null)
 			 throw new UserNotFoundException("id: "+id);
+		
+		EntityModel<User> entity = EntityModel.of(user);
+		
+		 WebMvcLinkBuilder link = linkTo(methodOn(this.getClass()).retrieveAllUsers()); 
+		
+		entity.add(link.withRel("all-users"));
 			
-		return user;
+		return entity;
 	}
 	
 	@PostMapping("users")
