@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -25,15 +26,18 @@ import jakarta.validation.Valid;
 @RestController
 public class UserResource {
 	
-	private UserDaoService service;
+
+	private UserRepository repository;
+	private PostRepository postRepository;
 	
-	public UserResource(UserDaoService service) {
-		this.service=service;
+	public UserResource(UserRepository repository,PostRepository postRepository) {
+		this.repository=repository;
+		this.postRepository=postRepository;
 	}
 	
 	@GetMapping("users")
 	public MappingJacksonValue retrieveAllUsers(){
-		List<User> all = service.findAll();
+		List<User> all = repository.findAll();
 		MappingJacksonValue mapping = new MappingJacksonValue(all);
 		
 		SimpleBeanPropertyFilter filter = SimpleBeanPropertyFilter.filterOutAllExcept("name","id");
@@ -46,7 +50,7 @@ public class UserResource {
 
 	@GetMapping("users/{id}")
 	public EntityModel<User> retrieveUser(@PathVariable int id){
-		User user = service.findById(id);
+		User user = repository.findById(id).get();
 		if(user==null)
 			 throw new UserNotFoundException("id: "+id);
 		
@@ -61,7 +65,7 @@ public class UserResource {
 	
 	@PostMapping("users")
 	public ResponseEntity<User> createUser(@Valid @RequestBody User user){
-		User savedUser = service.save(user);
+		User savedUser = repository.save(user);
 		URI location= ServletUriComponentsBuilder
 				.fromCurrentRequest()
 				.path("/{id}")
@@ -71,7 +75,28 @@ public class UserResource {
 	
 	@DeleteMapping("users/{id}")
 	public void deleteUser(@PathVariable int id){
-		 service.deleteById(id);
+		repository.deleteById(id);
 	}
+	
+	@GetMapping("users/{id}/posts")
+	public List<Post> getPosts(@PathVariable int id){
+		User user = repository.findById(id).get();
+		return user.getPosts();
+	}
+	
+	
+	@PostMapping("users/{id}/posts")
+	public void createPost(@PathVariable int id, @Valid @RequestBody Post post){
+		User user = repository.findById(id).get();
+		if(user==null)
+			 throw new UserNotFoundException("id: "+id);
+		post.setUser(user);
+		
+		postRepository.save(post);
+
+	}
+	
+	
+	
 
 }

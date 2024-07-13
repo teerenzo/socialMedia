@@ -10,8 +10,10 @@ import org.springframework.stereotype.Component;
 @Component
 public class UserDaoService {
 	
+	private UserRepository repository;
 	private static List<User> users = new ArrayList<>();
 	private static int count= 0;
+	
 	
 	static {
 		users.add(new User(++count,"renzo",LocalDate.now().minusYears(20)));
@@ -19,8 +21,12 @@ public class UserDaoService {
 		users.add(new User(++count,"emmanuel",LocalDate.now().minusYears(20)));
 	}
 	
+	public UserDaoService(UserRepository repository) {
+		this.repository=repository;
+	}
+	
 	public List<User> findAll(){
-		return users;
+		return repository.findAll();
 	}
 	
 	public User findById(int id){
