@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFilter;
 //import com.fasterxml.jackson.annotation.JsonIgnore;
 //import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -30,6 +31,7 @@ public class User {
 	private int id;
 	
 	@OneToMany(fetch = FetchType.LAZY, mappedBy = "user")
+	@JsonIgnore
 	private List<Post> posts;
 	
 	@Size(min=2,message = "name must have atleast 2 characters")
